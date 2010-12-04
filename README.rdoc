@@ -4,7 +4,7 @@ Call Lua from Ruby (and Ruby from Lua in Ruby)
 
 Language::Lua - Lua interpretor for Ruby 
 
-= SYNOPSIS
+== SYNOPSIS
 
   require 'language/lua'
   lua = Language::Lua.new()
@@ -18,40 +18,42 @@ Language::Lua - Lua interpretor for Ruby
   out = lua.call( "my_lua_function", ... )
   print out;
 
-= Ruby API
+== Ruby API
 
-== Language::Lua.new()
+=== Language::Lua.new()
 
 Create à new Lua interpretor
     
-== Language::Lua.load( file ) or Language::Lua.dofile( file )
+=== Language::Lua.load( file ) or Language::Lua.dofile( file )
 
 Load a Lua Script
 
-== Language::Lua.<lua_function>( ... )
+=== Language::Lua.<lua_function>( ... )
 
 Call the Lua function named <lua_function>
 
-== Language::Lua.call( [true|false], "<lua_function>", ... )
+=== Language::Lua.call( [true|false], "<lua_function>", ... )
 
 Call the Lua function named <lua_function>. 
 If first argument is true, the function result is not poped from the Lua Stack
 
-== Language::Lua.var( [true|false], "<lua_varname>", [<value>] )
+=== Language::Lua.var( [true|false], "<lua_varname>", [<value>] )
 
 Return the <lua_varname> value or set the <lua_varname> if <value> is given.
 
-== Language::Lua.eval( "lua_code" )
+=== Language::Lua.eval( "lua_code" )
 
 Evaluate the lua_code
 
-= Lua 
+== Lua 
 
-== ruby( "<ruby_function>", ... )
+Ruby/Lua adds the following new method to Lua :
+
+=== ruby( "<ruby_function>", ... )
 
 In your Lua code, call <ruby_function>.
 
-= Contributing to ruby-lua
+== Contributing to ruby-lua
  
 * Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet
 * Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it
@@ -61,7 +63,7 @@ In your Lua code, call <ruby_function>.
 * Make sure to add tests for it. This is important so I don't break it in a future version unintentionally.
 * Please try not to mess with the Rakefile, version, or history. If you want to have your own version, or is otherwise necessary, that is fine, but please isolate to its own commit so I can cherry-pick around it.
 
-= Copyright
+== Copyright
 
 Copyright (c) 2010 Gregoire Lejeune. See LICENSE.txt for
 further details.
