@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-require "../lua"
+require "../ext/lua"
 
 print "Ruby Lua Interpreter !\n"
 o = Language::Lua.new()

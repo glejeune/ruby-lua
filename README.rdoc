@@ -22,7 +22,7 @@ Language::Lua - Lua interpretor for Ruby
 
 === Language::Lua.new()
 
-Create à new Lua interpretor
+Create a new Lua interpretor
     
 === Language::Lua.load( file ) or Language::Lua.dofile( file )
 
@@ -31,15 +31,19 @@ Load a Lua Script
 === Language::Lua.<lua_function>( ... )
 
 Call the Lua function named <lua_function>
+This is equivalent to 
+
+	Language::Lua.call( false, "<lua_function>", ... )
 
 === Language::Lua.call( [true|false], "<lua_function>", ... )
 
 Call the Lua function named <lua_function>. 
-If first argument is true, the function result is not poped from the Lua Stack
+If first argument is true, the function result is not poped from the Lua Stack (default: false).
 
 === Language::Lua.var( [true|false], "<lua_varname>", [<value>] )
 
 Return the <lua_varname> value or set the <lua_varname> if <value> is given.
+
 
 === Language::Lua.eval( "lua_code" )
 

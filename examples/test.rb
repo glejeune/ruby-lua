@@ -1,15 +1,15 @@
 #!/usr/bin/ruby
 
 require 'pp'
-require "../lua"
+require "../ext/lua"
 
 lua = Language::Lua.new()
 lua.load( "test.lua" )
 
 i = 0;
 print "BEGIN[#{i}]: -------------------------------------------------\n"
-print "Lua Stack Size = #{lua.stackSize}\n"
-lua.stackDump
+print "Lua Stack Size = #{lua.stack_size}\n"
+lua.stack_dump
 print "END[#{i}]:   -------------------------------------------------\n"
 
 r = lua.call( "fact", 10 )
@@ -48,8 +48,8 @@ print "norm( 2, 3 ) -> #{r}\n"
 
 
 print "BEGIN: -------------------------------------------------\n"
-print "Lua Stack Size = #{lua.stackSize}\n"
-lua.stackDump
+print "Lua Stack Size = #{lua.stack_size}\n"
+lua.stack_dump
 print "END:   -------------------------------------------------\n"
 
 a = Array::new( )
@@ -58,14 +58,14 @@ a[1] = "greg"
 lua.var( "tbl", a )
 r = lua.var( "tbl" )
 print "BEGIN: -------------------------------------------------\n"
-print "Lua Stack Size = #{lua.stackSize}\n"
-lua.stackDump
+print "Lua Stack Size = #{lua.stack_size}\n"
+lua.stack_dump
 print "END:   -------------------------------------------------\n"
 
 print "var( \"tbl\" ) -> "; pp r
 print "BEGIN: -------------------------------------------------\n"
-print "Lua Stack Size = #{lua.stackSize}\n"
-lua.stackDump
+print "Lua Stack Size = #{lua.stack_size}\n"
+lua.stack_dump
 print "END:   -------------------------------------------------\n"
 
 r.each { |k, v|

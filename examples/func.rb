@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-require "../lua"
+require "../ext/lua"
 
 def my_function( str, num )
   puts "In my_function !!!"
