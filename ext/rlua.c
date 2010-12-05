@@ -294,6 +294,10 @@ VALUE ruby_lua_new( VALUE class ) {
   lua_pushlightuserdata( pRbTlua->L, (void *)self );
   lua_settable( pRbTlua->L, LUA_REGISTRYINDEX );
 
+	if(rb_block_given_p()) {
+		rb_yield(self);
+	}
+
   return( self );
 }  
 

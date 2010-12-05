@@ -10,9 +10,9 @@ end
 lua = Language::Lua.new()
 
 lua.eval <<LUA
-    function one( )
-      return 1
-    end
+  function one( )
+    return 1
+  end
 
 	function two( )
 	  return 2, 3 
