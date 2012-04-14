@@ -15,6 +15,9 @@ lib = ""
 #unless have_library( 'm', 'atan' )
 #  crash( 'need libm' )
 #end
+if /^1.8/.match RUBY_VERSION
+    $CFLAGS << " -DRUBY_1_8"
+end
 
 if dir_config( "lua50" ) != [nil, nil]
    inc, lib = dir_config( 'lua50' ) 

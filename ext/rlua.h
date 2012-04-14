@@ -22,7 +22,11 @@
 #define __RUBY_LUA_H__
 
 #include <ruby.h>
+#ifdef RUBY_1_8
 #include <rubyio.h>
+#else
+#include <ruby/io.h>
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>

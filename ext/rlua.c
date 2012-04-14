@@ -67,7 +67,7 @@ static const char *_xSelf = "_xSelf";
  */
 static void lua_SetVarToStack( lua_State *L, VALUE vVarValue ) {
   int iStackSize;
-  int iRbArrayLength;
+  long iRbArrayLength;
   int iCpt;
   VALUE keys;
   
@@ -82,7 +82,7 @@ static void lua_SetVarToStack( lua_State *L, VALUE vVarValue ) {
       lua_pushboolean( L, 0 );
       break;
     case T_STRING:
-      lua_pushlstring( L, RSTRING(vVarValue)->ptr, RSTRING(vVarValue)->len );
+      lua_pushlstring( L, RSTRING_PTR(vVarValue), RSTRING_LEN(vVarValue) );
       break;
     case T_FIXNUM:
       lua_pushnumber( L, FIX2INT(vVarValue) );
@@ -91,27 +91,27 @@ static void lua_SetVarToStack( lua_State *L, VALUE vVarValue ) {
       lua_pushnumber( L, NUM2DBL(vVarValue) );
       break;
     case T_FLOAT:
-      lua_pushnumber( L, (lua_Number)RFLOAT(vVarValue)->value );
+      lua_pushnumber( L, (lua_Number)RFLOAT_VALUE(vVarValue) );
       break;
     case T_ARRAY:
       lua_newtable( L );
       iStackSize = lua_gettop( L );
-      iRbArrayLength = RARRAY( vVarValue )->len;
+      iRbArrayLength = RARRAY_LEN( vVarValue );
       lua_pushstring( L, "n" );
       lua_pushnumber( L, iRbArrayLength );
       lua_settable( L, -3 );
       for( iCpt = 0; iCpt < iRbArrayLength; iCpt++ ) {
-        lua_SetVarToStack( L, RARRAY(vVarValue)->ptr[iCpt] );
+        lua_SetVarToStack( L, RARRAY_PTR(vVarValue)[iCpt] );
         lua_rawseti( L, iStackSize, iCpt + 1 );
       }
       break;
     case T_HASH:
       lua_newtable( L );
       keys = rb_funcall( vVarValue, rb_intern("keys"), 0 );
-      for( iCpt = 0; iCpt <= (RARRAY(keys)->len)-1; iCpt++ ){
+      for( iCpt = 0; iCpt <= RARRAY_LEN(keys)-1; iCpt++ ){
         VALUE vHashKey;
-        vHashKey = *(RARRAY(keys)->ptr+iCpt);
-        lua_pushlstring( L, RSTRING(vHashKey)->ptr, RSTRING(vHashKey)->len );
+        vHashKey = *(RARRAY_PTR(keys)+iCpt);
+        lua_pushlstring( L, RSTRING_PTR(vHashKey), RSTRING_LEN(vHashKey) );
         lua_SetVarToStack( L, rb_hash_aref(vVarValue, vHashKey) );
         lua_settable( L, -3 );
       }
@@ -129,7 +129,7 @@ static void lua_SetVarToStack( lua_State *L, VALUE vVarValue ) {
  * Desc: Positionne une valeur nommée Ruby dans l'index global Lua
  */
 static void lua_SetNamedVarFromRuby( lua_State *L, VALUE vVarName, VALUE vVarValue ) {
-  lua_pushlstring( L, RSTRING(vVarName)->ptr, RSTRING(vVarName)->len );
+  lua_pushlstring( L, RSTRING_PTR(vVarName), RSTRING_LEN(vVarName) );
   lua_SetVarToStack( L, vVarValue );
   lua_settable( L, LUA_GLOBALSINDEX );
   return;
@@ -276,6 +276,7 @@ void ruby_lua_mark( RbTlua *pRbTlua ) {
  * Desc: Constructeur de class
  */
 VALUE ruby_lua_new( VALUE class ) {
+  VALUE self; 
   RbTlua *pRbTlua;
 
   pRbTlua = (RbTlua *)malloc(sizeof(RbTlua));
@@ -287,7 +288,7 @@ VALUE ruby_lua_new( VALUE class ) {
 
   lua_register( pRbTlua->L, "ruby", lua_CallRubyFunction );
   
-  VALUE self = Data_Wrap_Struct( class, ruby_lua_mark, ruby_lua_free, pRbTlua );
+  self = Data_Wrap_Struct( class, ruby_lua_mark, ruby_lua_free, pRbTlua );
   
   /** Act: On place self dans la Registry Lua */
   lua_pushlightuserdata( pRbTlua->L, (void *)&_xSelf );
@@ -325,10 +326,9 @@ VALUE ruby_lua_load( VALUE self, VALUE xOutFilename ) {
  *       en le supprimant de la stack
  */
 VALUE ruby_lua_method_missing(int iNbArgs, VALUE *vArgs, VALUE self) {
+  VALUE RCod = Qnil;
   RbTlua *pRbTlua;
   Data_Get_Struct( self, RbTlua, pRbTlua );
-
-  VALUE RCod = Qnil;
 
   RCod = ruby_CallLuaFunction( (char*)rb_id2name(SYM2ID(vArgs[0])), iNbArgs - 1, vArgs + 1, self );
   lua_pop( pRbTlua->L, 1 );
@@ -343,10 +343,9 @@ VALUE ruby_lua_method_missing(int iNbArgs, VALUE *vArgs, VALUE self) {
  *       en le conservant dant la stack si le premier argument est true 
  */
 VALUE ruby_lua_call(int iNbArgs, VALUE *vArgs, VALUE self) {
+  VALUE RCod = Qnil;
   RbTlua *pRbTlua;
   Data_Get_Struct( self, RbTlua, pRbTlua );
-
-  VALUE RCod = Qnil;
 
   switch( TYPE( vArgs[0] ) ) {
     case T_TRUE:
@@ -378,10 +377,9 @@ VALUE ruby_lua_call(int iNbArgs, VALUE *vArgs, VALUE self) {
  *       Ou positionne la valeur de 
  */
 VALUE ruby_lua_var( int iNbArgs, VALUE *vArgs, VALUE self ) {
+  VALUE RCod = Qnil;
   RbTlua *pRbTlua;
   Data_Get_Struct( self, RbTlua, pRbTlua );
-  
-  VALUE RCod = Qnil;
 
   switch( TYPE( vArgs[0] ) ) {
     case T_TRUE:
@@ -438,10 +436,11 @@ VALUE ruby_lua_var( int iNbArgs, VALUE *vArgs, VALUE self ) {
  * Desc: Evalue le code Lua <lua_code>
  */
 VALUE ruby_lua_eval( VALUE self, VALUE xLuaCode ) {
+  char *pszLuaCode; 
   RbTlua *pRbTlua;
   Data_Get_Struct( self, RbTlua, pRbTlua );
   
-  char *pszLuaCode = StringValuePtr( xLuaCode );
+  pszLuaCode = StringValuePtr( xLuaCode );
   if( luaL_loadbuffer( pRbTlua->L, pszLuaCode, strlen(pszLuaCode), "line" ) || lua_pcall(pRbTlua->L, 0, 0, 0) ) {
     rb_raise( rb_eSystemCallError, "Lua error: %s", lua_tostring( pRbTlua->L, -1 ) );
   }
