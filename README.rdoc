@@ -33,7 +33,7 @@ Load a Lua Script
 Call the Lua function named <lua_function>
 This is equivalent to 
 
-	Language::Lua.call( false, "<lua_function>", ... )
+  Language::Lua.call( false, "<lua_function>", ... )
 
 === Language::Lua.call( [true|false], "<lua_function>", ... )
 
@@ -69,6 +69,6 @@ In your Lua code, call <ruby_function>.
 
 == Copyright
 
-Copyright (c) 2010 Gregoire Lejeune. See LICENSE.txt for
+Copyright (c) 2010-2012 Gregoire Lejeune. See LICENSE.txt for
 further details.
 
