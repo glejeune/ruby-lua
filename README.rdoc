@@ -69,6 +69,6 @@ In your Lua code, call <ruby_function>.
 
 == Copyright
 
-Copyright (c) 2010-2012 Gregoire Lejeune. See LICENSE.txt for
+Copyright (c) 2010-2013 Gregoire Lejeune. See LICENSE.txt for
 further details.
 
