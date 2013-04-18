@@ -31,8 +31,8 @@ elsif ex = find_executable( "lua-config" )
    $LDFLAGS << ' ' + `#{ex} --libs`.chomp
    $CFLAGS << ' ' + `#{ex} --include`.chomp
 elsif ex = find_executable( "pkg-config" )
-   $LDFLAGS << ' ' + `#{ex} --libs lua`.chomp
-   $CFLAGS << ' ' + `#{ex} --cflags lua`.chomp
+   $LDFLAGS << ' ' + `#{ex} --libs lua5.1 || #{ex} --libs lua`.chomp
+   $CFLAGS << ' ' + `#{ex} --cflags lua5.1 || #{ex} --cflags lua`.chomp
 else
   crash(<<EOL)
 need liblua50.
