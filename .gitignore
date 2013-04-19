@@ -16,6 +16,7 @@ pkg
 
 # For MacOS:
 .DS_Store
+.rake_tasks
 
 # For ext
 Makefile

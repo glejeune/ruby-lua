@@ -1,17 +1,19 @@
 require 'rubygems'
-require 'bundler/setup'
+require 'bundler'
 require 'rake'
 require 'rake/testtask'
+require 'rubygems/package_task'
+require 'rdoc/task'
 
 Rake::TestTask.new(:test) do |test|
   test.libs << 'lib' << 'test'
   test.pattern = 'test/**/test_*.rb'
   test.verbose = true
 end
+task :test => :compile
 
 task :default => :test
 
-require 'rdoc/task'
 RDoc::Task.new do |rdoc|
   version = File.exist?('VERSION') ? File.read('VERSION') : ""
 
@@ -21,7 +23,7 @@ RDoc::Task.new do |rdoc|
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
 
-task :build do
+task :compile do
   chdir 'ext' do
     ruby 'extconf.rb'
     sh   'make'
@@ -33,3 +35,5 @@ task :clean do
     sh 'rm -f *.bundle *.dll *.so *.o *.obj Makefile version.h mkmf.log'
   end
 end
+
+Bundler::GemHelper.install_tasks
