@@ -8,12 +8,10 @@ cur = Pathname.new(File.expand_path("..", __FILE__))
 lib = cur.join('..', 'lib')
 ext = cur.join('..', 'ext')
 
-unless ext.join("lua.so").exist?
+unless ext.join("lua.so").exist? or ext.join("lua.bundle").exist? or ext.join("lua.dll").exist?
  abort " ! Unable to run tests. Please run `rake build` first"
 end
 
 $LOAD_PATH.unshift(lib.to_s, ext.to_s, cur.to_s)
 require 'lua'
 
-class Test::Unit::TestCase
-end

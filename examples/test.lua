@@ -1,5 +1,5 @@
 -- defines a factorial function
-function fact (n)
+function fact(n)
   if n == 0 then
     return 1
   else
@@ -8,7 +8,7 @@ function fact (n)
 end
 
 -- define a stupid function
-function hello( )
+function hello()
   return "world"
 end
 
@@ -18,4 +18,4 @@ str = "blah blah blah"
 -- define a number variable
 num = 123
 
-fact( 3 )
+fact(3)
