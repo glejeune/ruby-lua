@@ -37,8 +37,7 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-#define RUBY_LUA_VERSION  "0.2.0"
-#define RUBY_LUA_VERNUM   020
+#include "version.h"
 
 typedef struct RbTlua {
   lua_State *L;

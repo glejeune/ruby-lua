@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ruby-lua (0.3.0)
+    ruby-lua (0.4.0)
 
 GEM
   remote: https://rubygems.org/

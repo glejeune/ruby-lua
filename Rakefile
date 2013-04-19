@@ -1,8 +1,8 @@
 require 'rubygems'
 require 'bundler/setup'
 require 'rake'
-
 require 'rake/testtask'
+
 Rake::TestTask.new(:test) do |test|
   test.libs << 'lib' << 'test'
   test.pattern = 'test/**/test_*.rb'
@@ -30,6 +30,6 @@ end
 
 task :clean do
   chdir 'ext' do
-    sh 'rm *.so *.o Makefile'
+    sh 'rm -f *.bundle *.dll *.so *.o *.obj Makefile version.h mkmf.log'
   end
 end

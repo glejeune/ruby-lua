@@ -5,7 +5,7 @@ Gem::Specification.new do |s|
   s.description = "Call Lua from Ruby (and Ruby from Lua in Ruby)"
   s.summary  = "Call Lua from Ruby (and Ruby from Lua in Ruby)"
 
-  s.version  = "0.3.0"
+  s.version  = open(File.join(File.dirname(__FILE__), "VERSION")).read
   s.platform = Gem::Platform::RUBY
 
   s.authors  = ["Gregoire Lejeune"]
