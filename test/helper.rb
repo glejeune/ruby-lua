@@ -1,18 +1,19 @@
 require 'rubygems'
-require 'bundler'
-begin
-  Bundler.setup(:default, :development)
-rescue Bundler::BundlerError => e
-  $stderr.puts e.message
-  $stderr.puts "Run `bundle install` to install missing gems"
-  exit e.status_code
-end
+require 'bundler/setup'
 require 'test/unit'
 require 'shoulda'
+require 'pathname'
 
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
-$LOAD_PATH.unshift(File.dirname(__FILE__))
-require 'ruby-lua'
+cur = Pathname.new(File.expand_path("..", __FILE__))
+lib = cur.join('..', 'lib')
+ext = cur.join('..', 'ext')
+
+unless ext.join("lua.so").exist?
+ abort " ! Unable to run tests. Please run `rake build` first"
+end
+
+$LOAD_PATH.unshift(lib.to_s, ext.to_s, cur.to_s)
+require 'lua'
 
 class Test::Unit::TestCase
 end
