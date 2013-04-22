@@ -26,6 +26,7 @@
 #include <rubyio.h>
 #else
 #include <ruby/io.h>
+#include <ruby/st.h>
 #endif
 
 #include <stdlib.h>
@@ -38,6 +39,7 @@
 #include <lualib.h>
 
 #include "config.h"
+#include "util.h"
 
 typedef struct RbTlua {
   lua_State *L;
