@@ -20,7 +20,7 @@ pkg
 
 # For ext
 Makefile
-ext/version.h
+ext/config.h
 *.bundle
 *.so
 *.dll

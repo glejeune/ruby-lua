@@ -129,9 +129,21 @@ static void lua_SetVarToStack( lua_State *L, VALUE vVarValue ) {
  * Desc: Positionne une valeur nommée Ruby dans l'index global Lua
  */
 static void lua_SetNamedVarFromRuby( lua_State *L, VALUE vVarName, VALUE vVarValue ) {
+#ifdef HAVE_LUA_GLOBALSINDEX
   lua_pushlstring( L, RSTRING_PTR(vVarName), RSTRING_LEN(vVarName) );
-  lua_SetVarToStack( L, vVarValue );
-  lua_settable( L, LUA_GLOBALSINDEX );
+#else
+  char * var_name = (char*)malloc(sizeof(char)*(RSTRING_LEN(vVarName)+1));
+  memset(var_name, 0, RSTRING_LEN(vVarName)+1);
+  memcpy(var_name, RSTRING_PTR(vVarName), RSTRING_LEN(vVarName));
+  lua_pushstring(L, var_name);
+#endif
+  lua_SetVarToStack(L, vVarValue);
+#ifdef HAVE_LUA_GLOBALSINDEX
+  lua_settable(L, LUA_GLOBALSINDEX);
+#else
+  lua_setglobal(L, var_name);
+  free(var_name);
+#endif
   return;
 }
 

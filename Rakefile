@@ -32,7 +32,7 @@ end
 
 task :clean do
   chdir 'ext' do
-    sh 'rm -f *.bundle *.dll *.so *.o *.obj Makefile version.h mkmf.log'
+    sh 'rm -f *.bundle *.dll *.so *.o *.obj Makefile config.h mkmf.log'
   end
 end
 

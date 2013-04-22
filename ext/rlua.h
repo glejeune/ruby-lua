@@ -37,7 +37,7 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-#include "version.h"
+#include "config.h"
 
 typedef struct RbTlua {
   lua_State *L;
