@@ -18,6 +18,9 @@
 
 #include "rlua.h"
 
+VALUE ruby_lua_stack_size(VALUE self);
+VALUE ruby_lua_stack_dump(VALUE self);
+
 #define _W_STACK(L) {\
     int i;\
     int iStackSize = lua_gettop( L );\
@@ -188,6 +191,7 @@ static VALUE lua_GetVarFromStack( lua_State *L ) {
       lua_settop(L,iStackSize);
       break;
     case LUA_TFUNCTION:
+      // TODO RCod = rb_str_new2("<luafunc>");
       break;
   }
   return(RCod);
@@ -242,20 +246,47 @@ static int lua_CallRubyFunction( lua_State *L ) {
 static VALUE ruby_CallLuaFunction( char *xFunctionName, int iNbArgs, VALUE *vArgs, VALUE self ) {
   RbTlua *pRbTlua;
   int iCpt;
+  int stack_size, final_stack_size, final_pop;
+  char *point_in_fun;
   VALUE RCod = Qnil;
 
   Data_Get_Struct( self, RbTlua, pRbTlua );
 
+  stack_size = lua_gettop(pRbTlua->L);
+
   lua_getglobal( pRbTlua->L, xFunctionName );  /* get function */
+  if(!lua_isfunction(pRbTlua->L,lua_gettop(pRbTlua->L)) || NULL == strchr(xFunctionName, '.')){
+    lua_pop(pRbTlua->L, 1);
+
+    point_in_fun = strtok(xFunctionName, ".");
+    if(NULL == point_in_fun) {
+      rb_raise(rb_eSystemCallError, "error running lua function `%s': table does not exist", xFunctionName);
+    } else {
+      lua_getglobal(pRbTlua->L, point_in_fun);
+    }
+    point_in_fun = strtok(NULL, ".");
+    while(NULL != point_in_fun) {
+      lua_getfield(pRbTlua->L, -1, point_in_fun);
+      point_in_fun = strtok(NULL, ".");
+    }
+  } else {
+    rb_raise(rb_eSystemCallError, "error running lua function `%s': does not exist", xFunctionName);
+  }
 
   for( iCpt = 0; iCpt < iNbArgs; iCpt++ ) {
     lua_SetVarToStack( pRbTlua->L, vArgs[iCpt] );
   }
 
-  if( lua_pcall( pRbTlua->L, iNbArgs, 1, 0 ) != 0 )  /* do the call */
+  if( lua_pcall( pRbTlua->L, iNbArgs, 1, 0 ) != 0 )  /* do the call */ {
     rb_raise( rb_eSystemCallError, "error running lua function `%s': %s", xFunctionName, lua_tostring(pRbTlua->L, -1) );
+  }
 
   RCod = lua_GetVarFromStack( pRbTlua->L );
+
+  final_stack_size = lua_gettop(pRbTlua->L);
+  final_pop = final_stack_size - stack_size;
+  lua_pop(pRbTlua->L, final_pop);
+  lua_SetVarToStack(pRbTlua->L, RCod);
   
   return( RCod );
 }
@@ -296,9 +327,8 @@ VALUE ruby_lua_new( VALUE class ) {
     rb_raise( rb_eNoMemError, "No memory left for Lua struct" );
       
   pRbTlua->L = lua_newstate(l_alloc, pRbTlua->ud);
-	luaL_openlibs(pRbTlua->L);
-
   lua_register( pRbTlua->L, "ruby", lua_CallRubyFunction );
+	luaL_openlibs(pRbTlua->L);
   
   self = Data_Wrap_Struct( class, ruby_lua_mark, ruby_lua_free, pRbTlua );
   
