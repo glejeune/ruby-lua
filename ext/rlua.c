@@ -460,7 +460,7 @@ VALUE ruby_lua_call(int iNbArgs, VALUE *vArgs, VALUE self) {
         rb_raise(rb_eArgError, "Language::Lua.call argument error !");
     }
   } else {
-    int i, j;
+    int i, j, k;
     for(i = -1, j = 0; j < NUM2INT(ruby_lua_stack_size(self)) && LUA_TLIGHTUSERDATA != lua_type(pRbTlua->L, i); i--, j++);
     if(j < NUM2INT(ruby_lua_stack_size(self))) {
       VALUE fun = (VALUE)lua_touserdata(pRbTlua->L, i);
@@ -471,7 +471,7 @@ VALUE ruby_lua_call(int iNbArgs, VALUE *vArgs, VALUE self) {
         int nb_args = abs(i + 1);
         VALUE *args = (VALUE*)malloc(sizeof(VALUE) * (nb_args + 1));
         
-        for(int k = nb_args; k > 0; k--) {
+        for(k = nb_args; k > 0; k--) {
           args[k] = ruby_lua_pop(self);
         }
         args[0] = fname;
