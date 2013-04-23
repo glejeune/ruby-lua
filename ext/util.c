@@ -7,8 +7,9 @@ char* concatenate(int n, ...) {
   int i;
   const char* v;
   va_list vl;
-  va_start(vl, n);
   char *result = NULL;
+
+  va_start(vl, n);
   for(i=0; i<n; i++) {
     v = va_arg(vl, const char*);
 

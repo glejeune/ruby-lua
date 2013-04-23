@@ -23,11 +23,12 @@ VALUE cLua;
 
 VALUE ruby_lua_stack_size(VALUE self);
 VALUE ruby_lua_stack_dump(VALUE self);
+VALUE ruby_lua_pop(VALUE self);
 
 #define _W_STACK(L) {\
     int i;\
-    int iStackSize = lua_gettop( L );\
-    rb_warn( "Lua stack size = %d", iStackSize );\
+    int iStackSize = lua_gettop(L);\
+    rb_warn("Lua stack size = %d", iStackSize);\
     \
     for (i = 1; i <= iStackSize; i++) {\
       int t = lua_type(L, i);\
@@ -67,76 +68,75 @@ static void *l_alloc (void *ud, void *ptr, size_t osize, size_t nsize) {
 static const char *_xSelf = "_xSelf";
 
 /**
- * lua_SetVarToStack( lua_State *L, VALUE vVarValue )
+ * lua_SetVarToStack(lua_State *L, VALUE vVarValue)
  *
  * Desc: Positionne une valeur Ruby dans la pile Lua
  */
-static void lua_SetVarToStack( lua_State *L, VALUE vVarValue ) {
+static void lua_SetVarToStack(lua_State *L, VALUE vVarValue) {
   int iStackSize;
   long iRbArrayLength;
   int iCpt;
   VALUE keys;
   
-  switch( TYPE(vVarValue) ) {
+  switch(TYPE(vVarValue)) {
     case T_NIL:
-      lua_pushnil( L );
+      lua_pushnil(L);
       break;
     case T_TRUE:
-      lua_pushboolean( L, 1 );
+      lua_pushboolean(L, 1);
       break;
     case T_FALSE:
-      lua_pushboolean( L, 0 );
+      lua_pushboolean(L, 0);
       break;
     case T_STRING:
-      lua_pushlstring( L, RSTRING_PTR(vVarValue), RSTRING_LEN(vVarValue) );
+      lua_pushlstring(L, RSTRING_PTR(vVarValue), RSTRING_LEN(vVarValue));
       break;
     case T_FIXNUM:
-      lua_pushnumber( L, FIX2INT(vVarValue) );
+      lua_pushnumber(L, FIX2INT(vVarValue));
       break;
     case T_BIGNUM:
-      lua_pushnumber( L, NUM2DBL(vVarValue) );
+      lua_pushnumber(L, NUM2DBL(vVarValue));
       break;
     case T_FLOAT:
-      lua_pushnumber( L, (lua_Number)RFLOAT_VALUE(vVarValue) );
+      lua_pushnumber(L, (lua_Number)RFLOAT_VALUE(vVarValue));
       break;
     case T_ARRAY:
-      lua_newtable( L );
-      iStackSize = lua_gettop( L );
-      iRbArrayLength = RARRAY_LEN( vVarValue );
-      lua_pushstring( L, "n" );
-      lua_pushnumber( L, iRbArrayLength );
-      lua_settable( L, -3 );
-      for( iCpt = 0; iCpt < iRbArrayLength; iCpt++ ) {
-        lua_SetVarToStack( L, RARRAY_PTR(vVarValue)[iCpt] );
-        lua_rawseti( L, iStackSize, iCpt + 1 );
+      lua_newtable(L);
+      iStackSize = lua_gettop(L);
+      iRbArrayLength = RARRAY_LEN(vVarValue);
+      lua_pushstring(L, "n");
+      lua_pushnumber(L, iRbArrayLength);
+      lua_settable(L, -3);
+      for(iCpt = 0; iCpt < iRbArrayLength; iCpt++) {
+        lua_SetVarToStack(L, RARRAY_PTR(vVarValue)[iCpt]);
+        lua_rawseti(L, iStackSize, iCpt + 1);
       }
       break;
     case T_HASH:
-      lua_newtable( L );
-      keys = rb_funcall( vVarValue, rb_intern("keys"), 0 );
-      for( iCpt = 0; iCpt <= RARRAY_LEN(keys)-1; iCpt++ ){
+      lua_newtable(L);
+      keys = rb_funcall(vVarValue, rb_intern("keys"), 0);
+      for(iCpt = 0; iCpt <= RARRAY_LEN(keys)-1; iCpt++){
         VALUE vHashKey;
         vHashKey = *(RARRAY_PTR(keys)+iCpt);
-        lua_pushlstring( L, RSTRING_PTR(vHashKey), RSTRING_LEN(vHashKey) );
-        lua_SetVarToStack( L, rb_hash_aref(vVarValue, vHashKey) );
-        lua_settable( L, -3 );
+        lua_pushlstring(L, RSTRING_PTR(vHashKey), RSTRING_LEN(vHashKey));
+        lua_SetVarToStack(L, rb_hash_aref(vVarValue, vHashKey));
+        lua_settable(L, -3);
       }
       break;
-  
     default:
-      lua_pushlightuserdata( L,(void*)vVarValue ); /* saves ruby object */
+      lua_pushlightuserdata(L,(void*)vVarValue); /* saves ruby object */
       break;
   }
 }
 
 /**
- * lua_SetNamedVarFromRuby( lua_State *L, VALUE vVarName, VALUE vVarValue );
+ * lua_SetNamedVarFromRuby(lua_State *L, VALUE vVarName, VALUE vVarValue);
  *
  * Desc: Positionne une valeur nommée Ruby dans l'index global Lua
  */
-static void lua_SetNamedVarFromRuby( lua_State *L, VALUE vVarName, VALUE vVarValue ) {
+static void lua_SetNamedVarFromRuby(lua_State *L, VALUE vVarName, VALUE vVarValue) {
 #ifdef HAVE_LUA_GLOBALSINDEX
-  lua_pushlstring( L, RSTRING_PTR(vVarName), RSTRING_LEN(vVarName) );
+  lua_pushlstring(L, RSTRING_PTR(vVarName), RSTRING_LEN(vVarName));
 #else
   char * var_name = (char*)malloc(sizeof(char)*(RSTRING_LEN(vVarName)+1));
   memset(var_name, 0, RSTRING_LEN(vVarName)+1);
@@ -154,7 +154,7 @@ static void lua_SetNamedVarFromRuby( lua_State *L, VALUE vVarName, VALUE vVarVal
 }
 
 /**
- * VALUE v = lua_GetVarFromStack( lua_State *L );
+ * VALUE v = lua_GetVarFromStack(lua_State *L);
  *
  * Desc: Récupère la valeur au sommet de la pile Lua
  */
@@ -198,6 +198,9 @@ static VALUE lua_GetVarFromStack(lua_State *L) {
       break;
     case LUA_TFUNCTION:
       RCod = rb_class_new_instance(0, NULL, rb_const_get(cLua, rb_intern("Function")));
+      break;
+    default:
+      RCod = (VALUE)lua_touserdata(L, -1);
       break;
   }
   return(RCod);
@@ -245,7 +248,7 @@ void lua_populate_fun(VALUE table, VALUE lua, char *parent) {
   free(p);
 }
 
-static int lua_CallRubyFunction( lua_State *L ) {
+static int lua_CallRubyFunction(lua_State *L) {
   int iNbArgs = lua_gettop(L);
   VALUE self;
   char *xRubyFuncName;
@@ -255,30 +258,30 @@ static int lua_CallRubyFunction( lua_State *L ) {
   VALUE vFuncRCod = Qnil;
   int iCpt;
 
-  if( iNbArgs < 1 || !lua_isstring(L, 1) ) {
-    lua_pushstring( L, "incorrect argument to function `ruby'" );
+  if(iNbArgs < 1 || !lua_isstring(L, 1)) {
+    lua_pushstring(L, "incorrect argument to function `ruby'");
     lua_error(L);
   }
 
   xRubyFuncName = (char *)lua_tostring(L, 1);
-  idRubyFunc = rb_intern( xRubyFuncName );
+  idRubyFunc = rb_intern(xRubyFuncName);
   iNbFuncArgs = iNbArgs - 1;
-  lua_remove( L, 1 );
+  lua_remove(L, 1);
 
   /** Act: Recuperation de self depuis la registry Lua */
   lua_pushlightuserdata(L, (void *)&_xSelf);
   lua_gettable(L, LUA_REGISTRYINDEX);
   self = (VALUE)lua_touserdata(L,-1);
-  lua_pop( L, 1 );
+  lua_pop(L, 1);
 
-  vFuncArgs = malloc(sizeof(VALUE) * iNbFuncArgs );
-  for( iCpt = 0; iCpt < iNbFuncArgs; iCpt++ ) {
+  vFuncArgs = malloc(sizeof(VALUE) * iNbFuncArgs);
+  for(iCpt = 0; iCpt < iNbFuncArgs; iCpt++) {
 	  vFuncArgs[iNbFuncArgs - iCpt - 1] = lua_GetVarFromStack(L);
-	  lua_remove( L, -1 );
+	  lua_remove(L, -1);
   }
 
-  vFuncRCod = rb_funcall2( self, idRubyFunc, iNbFuncArgs, vFuncArgs );
-  lua_SetVarToStack( L, vFuncRCod );
+  vFuncRCod = rb_funcall2(self, idRubyFunc, iNbFuncArgs, vFuncArgs);
+  lua_SetVarToStack(L, vFuncRCod);
   
   return 1;
 }
@@ -286,23 +289,23 @@ static int lua_CallRubyFunction( lua_State *L ) {
 /** ------------------------------------------------------------------------ */
 
 /**
- * VALUE v = ruby_CallLuaFunction( char *xFunctionName, int iNbArgs, VALUE *vArgs, VALUE self )
+ * VALUE v = ruby_CallLuaFunction(char *xFunctionName, int iNbArgs, VALUE *vArgs, VALUE self)
  *
  * Desc: Appel la fonction Lua xFunctionName avec les paramètres contenu dans vArgs
  *       et retourne le résultat
  */
-static VALUE ruby_CallLuaFunction( char *xFunctionName, int iNbArgs, VALUE *vArgs, VALUE self ) {
+static VALUE ruby_CallLuaFunction(char *xFunctionName, int iNbArgs, VALUE *vArgs, VALUE self) {
   RbTlua *pRbTlua;
   int iCpt;
   int stack_size, final_stack_size, final_pop;
   char *point_in_fun;
   VALUE RCod = Qnil;
 
-  Data_Get_Struct( self, RbTlua, pRbTlua );
+  Data_Get_Struct(self, RbTlua, pRbTlua);
 
   stack_size = lua_gettop(pRbTlua->L);
 
-  lua_getglobal( pRbTlua->L, xFunctionName );  /* get function */
+  lua_getglobal(pRbTlua->L, xFunctionName);  /* get function */
   if(!lua_isfunction(pRbTlua->L,lua_gettop(pRbTlua->L)) || NULL == strchr(xFunctionName, '.')){
     lua_pop(pRbTlua->L, 1);
 
@@ -321,12 +324,12 @@ static VALUE ruby_CallLuaFunction( char *xFunctionName, int iNbArgs, VALUE *vArg
     rb_raise(rb_eSystemCallError, "error running lua function `%s': does not exist", xFunctionName);
   }
 
-  for( iCpt = 0; iCpt < iNbArgs; iCpt++ ) {
-    lua_SetVarToStack( pRbTlua->L, vArgs[iCpt] );
+  for(iCpt = 0; iCpt < iNbArgs; iCpt++) {
+    lua_SetVarToStack(pRbTlua->L, vArgs[iCpt]);
   }
 
-  if( lua_pcall( pRbTlua->L, iNbArgs, 1, 0 ) != 0 )  /* do the call */ {
-    rb_raise( rb_eSystemCallError, "error running lua function `%s': %s", xFunctionName, lua_tostring(pRbTlua->L, -1) );
+  if(lua_pcall(pRbTlua->L, iNbArgs, 1, 0) != 0)  /* do the call */ {
+    rb_raise(rb_eSystemCallError, "error running lua function `%s': %s", xFunctionName, lua_tostring(pRbTlua->L, -1));
   }
 
   RCod = lua_GetVarFromStack(pRbTlua->L);
@@ -336,7 +339,7 @@ static VALUE ruby_CallLuaFunction( char *xFunctionName, int iNbArgs, VALUE *vArg
   lua_pop(pRbTlua->L, final_pop);
   lua_SetVarToStack(pRbTlua->L, RCod);
   
-  return( RCod );
+  return(RCod);
 }
 
 /** ------------------------------------------------------------------------ */
@@ -344,7 +347,7 @@ static VALUE ruby_CallLuaFunction( char *xFunctionName, int iNbArgs, VALUE *vArg
 /**
  * Desc: Destructeur de class
  */
-void ruby_lua_free( RbTlua *pRbTlua ) {
+void ruby_lua_free(RbTlua *pRbTlua) {
   if (pRbTlua != NULL) {
     lua_close(pRbTlua->L);
     free(pRbTlua);
@@ -354,9 +357,9 @@ void ruby_lua_free( RbTlua *pRbTlua ) {
 /**
  * Desc: mark
  */
-void ruby_lua_mark( RbTlua *pRbTlua ) {
-  if( pRbTlua == NULL ) return;
-//  if( !NIL_P(pRbTlua->xXmlData) ) rb_gc_mark( pRbTlua->xXmlData );
+void ruby_lua_mark(RbTlua *pRbTlua) {
+  if(pRbTlua == NULL) return;
+//  if(!NIL_P(pRbTlua->xXmlData)) rb_gc_mark(pRbTlua->xXmlData);
 
   return;
 }
@@ -366,51 +369,51 @@ void ruby_lua_mark( RbTlua *pRbTlua ) {
  *
  * Desc: Constructeur de class
  */
-VALUE ruby_lua_new( VALUE class ) {
+VALUE ruby_lua_new(VALUE class) {
   VALUE self; 
   RbTlua *pRbTlua;
 
   pRbTlua = (RbTlua *)malloc(sizeof(RbTlua));
-  if( pRbTlua == NULL )
-    rb_raise( rb_eNoMemError, "No memory left for Lua struct" );
+  if(pRbTlua == NULL)
+    rb_raise(rb_eNoMemError, "No memory left for Lua struct");
       
   pRbTlua->L = lua_newstate(l_alloc, pRbTlua->ud);
-  lua_register( pRbTlua->L, "ruby", lua_CallRubyFunction );
+  lua_register(pRbTlua->L, "ruby", lua_CallRubyFunction);
 	luaL_openlibs(pRbTlua->L);
   
-  self = Data_Wrap_Struct( class, ruby_lua_mark, ruby_lua_free, pRbTlua );
+  self = Data_Wrap_Struct(class, ruby_lua_mark, ruby_lua_free, pRbTlua);
   
   /** Act: On place self dans la Registry Lua */
-  lua_pushlightuserdata( pRbTlua->L, (void *)&_xSelf );
-  lua_pushlightuserdata( pRbTlua->L, (void *)self );
-  lua_settable( pRbTlua->L, LUA_REGISTRYINDEX );
+  lua_pushlightuserdata(pRbTlua->L, (void *)&_xSelf);
+  lua_pushlightuserdata(pRbTlua->L, (void *)self);
+  lua_settable(pRbTlua->L, LUA_REGISTRYINDEX);
 
 	if(rb_block_given_p()) {
 		rb_yield(self);
 	}
 
-  return( self );
+  return(self);
 }  
 
 /** 
- * lua.load( "script.lua" ) 
- * lua.dofile( "script.lua" ) 
+ * lua.load("script.lua") 
+ * lua.dofile("script.lua") 
  *
  * Desc: Charge un script Lua
  */
-VALUE ruby_lua_load( VALUE self, VALUE xOutFilename ) {
+VALUE ruby_lua_load(VALUE self, VALUE xOutFilename) {
   RbTlua *pRbTlua;
-  Data_Get_Struct( self, RbTlua, pRbTlua );
+  Data_Get_Struct(self, RbTlua, pRbTlua);
 
-  if( luaL_loadfile( pRbTlua->L, StringValuePtr( xOutFilename ) ) || lua_pcall( pRbTlua->L, 0, 0, 0 ) ) {
-    rb_raise( rb_eSystemCallError, "cannot run file %s !", lua_tostring( pRbTlua->L, -1 ) );
+  if(luaL_loadfile(pRbTlua->L, StringValuePtr(xOutFilename)) || lua_pcall(pRbTlua->L, 0, 0, 0)) {
+    rb_raise(rb_eSystemCallError, "cannot run file %s !", lua_tostring(pRbTlua->L, -1));
   }
 
-  return( Qnil );
+  return(Qnil);
 }
 
 /** 
- * v = lua.<lua_method>( ... ) 
+ * v = lua.<lua_method>(...) 
  *
  * Desc: Appel la fonction Lua <lua_method> et renvoi le résultat 
  *       en le supprimant de la stack
@@ -418,16 +421,16 @@ VALUE ruby_lua_load( VALUE self, VALUE xOutFilename ) {
 VALUE ruby_lua_method_missing(int iNbArgs, VALUE *vArgs, VALUE self) {
   VALUE RCod = Qnil;
   RbTlua *pRbTlua;
-  Data_Get_Struct( self, RbTlua, pRbTlua );
+  Data_Get_Struct(self, RbTlua, pRbTlua);
 
-  RCod = ruby_CallLuaFunction( (char*)rb_id2name(SYM2ID(vArgs[0])), iNbArgs - 1, vArgs + 1, self );
-  lua_pop( pRbTlua->L, 1 );
+  RCod = ruby_CallLuaFunction((char*)rb_id2name(SYM2ID(vArgs[0])), iNbArgs - 1, vArgs + 1, self);
+  lua_pop(pRbTlua->L, 1);
 
-  return( RCod );
+  return(RCod);
 }
 
 /**
- * v = lua.call( [true|false], "<lua_method>", ... )
+ * v = lua.call([true|false], "<lua_method>", ...)
  *
  * Desc: Appel la fonction Lua <lua_method> et renvoi le résultat 
  *       en le conservant dant la stack si le premier argument est true 
@@ -435,137 +438,190 @@ VALUE ruby_lua_method_missing(int iNbArgs, VALUE *vArgs, VALUE self) {
 VALUE ruby_lua_call(int iNbArgs, VALUE *vArgs, VALUE self) {
   VALUE RCod = Qnil;
   RbTlua *pRbTlua;
-  Data_Get_Struct( self, RbTlua, pRbTlua );
+  Data_Get_Struct(self, RbTlua, pRbTlua);
 
-  switch( TYPE( vArgs[0] ) ) {
-    case T_TRUE:
-      RCod = ruby_CallLuaFunction( StringValuePtr(vArgs[1]), iNbArgs - 2, vArgs + 2, self );
-      break;
-      
-    case T_FALSE:
-      RCod = ruby_CallLuaFunction( StringValuePtr(vArgs[1]), iNbArgs - 2, vArgs + 2, self );
-      lua_pop( pRbTlua->L, 1 );
-      break;
-      
-    case T_STRING:
-      RCod = ruby_CallLuaFunction( StringValuePtr(vArgs[0]), iNbArgs - 1, vArgs + 1, self );
-      lua_pop( pRbTlua->L, 1 );
-      break;
-    
-    default:
-      rb_raise( rb_eArgError, "Language::Lua.call argument error !" );
+  if(iNbArgs > 0) {
+    switch(TYPE(vArgs[0])) {
+      case T_TRUE:
+        RCod = ruby_CallLuaFunction(StringValuePtr(vArgs[1]), iNbArgs - 2, vArgs + 2, self);
+        break;
+
+      case T_FALSE:
+        RCod = ruby_CallLuaFunction(StringValuePtr(vArgs[1]), iNbArgs - 2, vArgs + 2, self);
+        lua_pop(pRbTlua->L, 1);
+        break;
+
+      case T_STRING:
+        RCod = ruby_CallLuaFunction(StringValuePtr(vArgs[0]), iNbArgs - 1, vArgs + 1, self);
+        lua_pop(pRbTlua->L, 1);
+        break;
+
+      default:
+        rb_raise(rb_eArgError, "Language::Lua.call argument error !");
+    }
+  } else {
+    int i, j;
+    for(i = -1, j = 0; j < NUM2INT(ruby_lua_stack_size(self)) && LUA_TLIGHTUSERDATA != lua_type(pRbTlua->L, i); i--, j++);
+    if(j < NUM2INT(ruby_lua_stack_size(self))) {
+      VALUE fun = (VALUE)lua_touserdata(pRbTlua->L, i);
+      if(0 == strcmp("Language::Lua::Function", rb_obj_classname(fun))) {
+        VALUE result;
+
+        VALUE fname = rb_ivar_get(fun, rb_intern("@fname"));
+        int nb_args = abs(i + 1);
+        VALUE *args = (VALUE*)malloc(sizeof(VALUE) * (nb_args + 1));
+        
+        for(int k = nb_args; k > 0; k--) {
+          args[k] = ruby_lua_pop(self);
+        }
+        args[0] = fname;
+        
+        lua_remove(pRbTlua->L, 1);
+
+        result = ruby_lua_call(nb_args + 1, args, self); 
+        free(args);
+        return result;
+      }
+    } else {
+      rb_raise(rb_eArgError, "Language::Lua.call argument error !");
+    }
   }
 
-  return( RCod );
+  return(RCod);
 }
 
 /**
- * v = lua.var( [true|false], "<lua_varname>", [<value>] )
+ * v = lua.var([true|false], "<lua_varname>", [<value>])
  *
  * Desc: Retourne la valeur de la valiable Lua <lua_varname>
  *       en le conservant dans la stack si le premier argument est true .
  *       Ou positionne la valeur de 
  */
-VALUE ruby_lua_var( int iNbArgs, VALUE *vArgs, VALUE self ) {
+VALUE ruby_lua_var(int iNbArgs, VALUE *vArgs, VALUE self) {
   VALUE RCod = Qnil;
   RbTlua *pRbTlua;
-  Data_Get_Struct( self, RbTlua, pRbTlua );
+  Data_Get_Struct(self, RbTlua, pRbTlua);
 
-  switch( TYPE( vArgs[0] ) ) {
+  switch(TYPE(vArgs[0])) {
     case T_TRUE:
-      if( iNbArgs == 2 ) {
+      if(iNbArgs == 2) {
         /** Act: Recupère la valeur */
-        lua_getglobal( pRbTlua->L, StringValuePtr(vArgs[1]) );
+        lua_getglobal(pRbTlua->L, StringValuePtr(vArgs[1]));
         RCod = lua_GetVarFromStack(pRbTlua->L);
         lua_populate_fun(RCod, self, StringValuePtr(vArgs[1]));
-      } else if( iNbArgs == 3 ) {
+      } else if(iNbArgs == 3) {
         /** Positionne la valeur */
-        lua_SetNamedVarFromRuby( pRbTlua->L, vArgs[1], vArgs[2] );
+        lua_SetNamedVarFromRuby(pRbTlua->L, vArgs[1], vArgs[2]);
       } else {
-        rb_raise( rb_eArgError, "Language::Lua.var argument error !" );
+        rb_raise(rb_eArgError, "Language::Lua.var argument error !");
       }
       break;
       
     case T_FALSE:
-      if( iNbArgs == 2 ) {
+      if(iNbArgs == 2) {
         /** Act: Recupère la valeur */
-        lua_getglobal( pRbTlua->L, StringValuePtr(vArgs[1]) );
+        lua_getglobal(pRbTlua->L, StringValuePtr(vArgs[1]));
         RCod = lua_GetVarFromStack(pRbTlua->L);
         lua_populate_fun(RCod, self, StringValuePtr(vArgs[1]));
-        lua_pop( pRbTlua->L, 1 );
-      } else if( iNbArgs == 3 ) {
+        lua_pop(pRbTlua->L, 1);
+      } else if(iNbArgs == 3) {
         /** Positionne la valeur */
-        lua_SetNamedVarFromRuby( pRbTlua->L, vArgs[1], vArgs[2] );
+        lua_SetNamedVarFromRuby(pRbTlua->L, vArgs[1], vArgs[2]);
       } else {
-        rb_raise( rb_eArgError, "Language::Lua.var argument error !" );
+        rb_raise(rb_eArgError, "Language::Lua.var argument error !");
       }
       break;
       
     case T_STRING:
-      if( iNbArgs == 1 ) {
+      if(iNbArgs == 1) {
         /** Act: Recupère la valeur */
-        lua_getglobal( pRbTlua->L, StringValuePtr(vArgs[0]) );
+        lua_getglobal(pRbTlua->L, StringValuePtr(vArgs[0]));
         RCod = lua_GetVarFromStack(pRbTlua->L);
         lua_populate_fun(RCod, self, StringValuePtr(vArgs[0]));
-        lua_pop( pRbTlua->L, 1 );
-      } else if( iNbArgs == 2 ) {
+        lua_pop(pRbTlua->L, 1);
+      } else if(iNbArgs == 2) {
         /** Positionne la valeur */
-        lua_SetNamedVarFromRuby( pRbTlua->L, vArgs[0], vArgs[1] );
+        lua_SetNamedVarFromRuby(pRbTlua->L, vArgs[0], vArgs[1]);
       } else {
-        rb_raise( rb_eArgError, "Language::Lua.var argument error !" );
+        rb_raise(rb_eArgError, "Language::Lua.var argument error !");
       }
       break;
     
     default:
-      rb_raise( rb_eArgError, "Language::Lua.var argument error !" );
+      rb_raise(rb_eArgError, "Language::Lua.var argument error !");
   }
 
-  return( RCod );
+  return(RCod);
 }
 
 /** 
- * lua.eval( "<lua_code>" ) 
+ * lua.eval("<lua_code>") 
  *
  * Desc: Evalue le code Lua <lua_code>
  */
-VALUE ruby_lua_eval( VALUE self, VALUE xLuaCode ) {
+VALUE ruby_lua_eval(VALUE self, VALUE xLuaCode) {
   char *pszLuaCode; 
   RbTlua *pRbTlua;
-  Data_Get_Struct( self, RbTlua, pRbTlua );
+  Data_Get_Struct(self, RbTlua, pRbTlua);
   
-  pszLuaCode = StringValuePtr( xLuaCode );
-  if( luaL_loadbuffer( pRbTlua->L, pszLuaCode, strlen(pszLuaCode), "line" ) || lua_pcall(pRbTlua->L, 0, 0, 0) ) {
-    rb_raise( rb_eSystemCallError, "Lua error: %s", lua_tostring( pRbTlua->L, -1 ) );
+  pszLuaCode = StringValuePtr(xLuaCode);
+  if(luaL_loadbuffer(pRbTlua->L, pszLuaCode, strlen(pszLuaCode), "line") || lua_pcall(pRbTlua->L, 0, 0, 0)) {
+    rb_raise(rb_eSystemCallError, "Lua error: %s", lua_tostring(pRbTlua->L, -1));
   }
 
-  return( Qnil );
+  return(Qnil);
+}
+
+VALUE ruby_lua_pop(VALUE self) {
+  RbTlua *pRbTlua;
+  VALUE result = Qnil;
+
+  Data_Get_Struct(self, RbTlua, pRbTlua);
+
+  if(NUM2INT(ruby_lua_stack_size(self)) > 0) {
+    result = lua_GetVarFromStack(pRbTlua->L);
+    lua_pop(pRbTlua->L, 1);
+  }
+
+  return result;
+}
+
+VALUE ruby_lua_push(VALUE self, VALUE value) {
+  RbTlua *pRbTlua;
+  Data_Get_Struct(self, RbTlua, pRbTlua);
+
+  lua_SetVarToStack(pRbTlua->L, value);
+  return Qnil;
 }
 
 /**
- * v = lua.stackSize( )
+ * v = lua.stackSize()
  *
  * Desc: Retourne la taille de la stack Lua
  */
-VALUE ruby_lua_stack_size( VALUE self ) {
+VALUE ruby_lua_stack_size(VALUE self) {
   RbTlua *pRbTlua;
-  Data_Get_Struct( self, RbTlua, pRbTlua );
+  Data_Get_Struct(self, RbTlua, pRbTlua);
   
-  return( INT2NUM( lua_gettop( pRbTlua->L ) ) );
+  return(INT2NUM(lua_gettop(pRbTlua->L)));
 }
 
 /**
- * lua.stackDump( )
+ * lua.stackDump()
  *
  * Desc: Dump le contenu de la stack sur la sortie standard
  */
-VALUE ruby_lua_stack_dump( VALUE self ) {
+VALUE ruby_lua_stack_dump(VALUE self) {
   RbTlua *pRbTlua;
   int i;
   int iStackSize;
   
-  Data_Get_Struct( self, RbTlua, pRbTlua );
+  Data_Get_Struct(self, RbTlua, pRbTlua);
   
   iStackSize = lua_gettop(pRbTlua->L);
+  if(0 == iStackSize) {
+    printf("## empty stack\n");
+  }
   for (i = 1; i <= iStackSize; i++) {  /* repeat for each level */
     int t = lua_type(pRbTlua->L, i);
     switch (t) {
@@ -587,27 +643,29 @@ VALUE ruby_lua_stack_dump( VALUE self ) {
     }
   }
 
-  return( Qnil );
+  return(Qnil);
 }
 
 /** ------------------------------------------------------------------------ */
 
-void Init_lua( void ) {
-  mLanguage  = rb_define_module( "Language" );
-  cLua = rb_define_class_under( mLanguage, "Lua", rb_cObject );
+void Init_lua(void) {
+  mLanguage  = rb_define_module("Language");
+  cLua = rb_define_class_under(mLanguage, "Lua", rb_cObject);
 
-  rb_define_const( cLua, "RUBY_LUA_VERSION", rb_str_new2( RUBY_LUA_VERSION ) );
+  rb_define_const(cLua, "RUBY_LUA_VERSION", rb_str_new2(RUBY_LUA_VERSION));
 
-  rb_define_singleton_method( cLua, "new", ruby_lua_new, 0 );
+  rb_define_singleton_method(cLua, "new", ruby_lua_new, 0);
 
-  rb_define_method( cLua, "load",           ruby_lua_load,            1 );
-  rb_define_method( cLua, "dofile",         ruby_lua_load,            1 );
-  rb_define_method( cLua, "method_missing", ruby_lua_method_missing, -1 );
-  rb_define_method( cLua, "call",           ruby_lua_call,           -1 );
-  rb_define_method( cLua, "var",            ruby_lua_var,            -1 );
-  rb_define_method( cLua, "eval",           ruby_lua_eval,            1 );
+  rb_define_method(cLua, "load",           ruby_lua_load,            1);
+  rb_define_method(cLua, "dofile",         ruby_lua_load,            1);
+  rb_define_method(cLua, "method_missing", ruby_lua_method_missing, -1);
+  rb_define_method(cLua, "call",           ruby_lua_call,           -1);
+  rb_define_method(cLua, "var",            ruby_lua_var,            -1);
+  rb_define_method(cLua, "eval",           ruby_lua_eval,            1);
+  rb_define_method(cLua, "pop",            ruby_lua_pop,             0);
+  rb_define_method(cLua, "push",           ruby_lua_push,            1);
   
-  rb_define_method( cLua, "stack_size",      ruby_lua_stack_size,      0 );
-  rb_define_method( cLua, "stack_dump",      ruby_lua_stack_dump,      0 );
+  rb_define_method(cLua, "stack_size",      ruby_lua_stack_size,      0);
+  rb_define_method(cLua, "stack_dump",      ruby_lua_stack_dump,      0);
 }
 
