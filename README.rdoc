@@ -8,54 +8,70 @@ Language::Lua - Lua interpretor for Ruby
 
   require 'language/lua'
   lua = Language::Lua.new()
-  lua.eval( "script.lua" )
-  # same as
-  lua.dofile( "script.lua" ) 
+  lua.eval("script.lua")
   
   out = lua.my_lua_function( ... )
-  print out;
-  # same as 
-  out = lua.call( "my_lua_function", ... )
   print out;
 
 == Ruby API
 
-=== Language::Lua.new()
+=== class Language::Lua
+
+==== new
 
 Create a new Lua interpretor
     
-=== Language::Lua.load( file ) or Language::Lua.dofile( file )
+==== load(filename)
 
 Load a Lua Script
 
-=== Language::Lua.<lua_function>( ... )
+==== dofile(filename)
 
-Call the Lua function named <lua_function>
-This is equivalent to 
+alias for load
 
-  Language::Lua.call( false, "<lua_function>", ... )
+==== call([true|false], fname, *args)
 
-=== Language::Lua.call( [true|false], "<lua_function>", ... )
+Call the Lua function named fname with arguemnts *args
 
-Call the Lua function named <lua_function>. 
 If first argument is true, the function result is not poped from the Lua Stack (default: false).
 
-=== Language::Lua.var( [true|false], "<lua_varname>", [<value>] )
+==== var([true|false], vname, value)
 
-Return the <lua_varname> value or set the <lua_varname> if <value> is given.
+Return the lua vname value or set the lua vname if value is given.
 
-
-=== Language::Lua.eval( "lua_code" )
+==== eval(lua_code)
 
 Evaluate the lua_code
+
+==== pop()
+
+Pop the lua value on the top of the Lua stack
+
+==== push(value)
+
+Push the value on the top of the Lua stack
+
+==== stack_size()
+
+Return the Lua stack size
+
+==== stack_dump()
+
+Display the content of the Lua stack
+
+=== class Language::Lua::Function
+
+==== call(*args)
+
+Call the current Lua function with arguments *args
 
 == Lua 
 
 Ruby/Lua adds the following new method to Lua :
 
-=== ruby( "<ruby_function>", ... )
+=== ruby("ruby_function", ...)
 
-In your Lua code, call <ruby_function>.
+In your Lua code, call ruby_function.
 
 == Contributing to ruby-lua
  
